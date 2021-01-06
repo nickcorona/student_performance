@@ -6,6 +6,7 @@ import seaborn as sns
 from category_encoders import OneHotEncoder, OrdinalEncoder  # sometimes needed
 from sklearn.model_selection import train_test_split
 from statsmodels.nonparametric.smoothers_lowess import lowess
+
 from helpers import loguniform
 
 df = pd.read_csv("data/StudentsPerformance.csv")
@@ -60,11 +61,10 @@ history = lgb.train(
     verbose_eval=REPORT_ROUNDS,
 )
 
-
 best_etas = {"eta": [], "score": []}
 
 for _ in range(60):
-    eta = loguniform(-5, -1)
+    eta = loguniform(-4, 0)
     best_etas["eta"].append(eta)
     params["eta"] = eta
     model = lgb.train(
@@ -85,6 +85,7 @@ lowess_data = lowess(
 )
 
 # use log scale as it's easier to observe the whole graph
+sns.lineplot(x=lowess_data[:, 0], y=lowess_data[:, 1])
 plt.xscale("log")
 rounded_data = lowess_data.copy()
 rounded_data[:, 1] = rounded_data[:, 1].round(4)
@@ -101,10 +102,9 @@ good_eta = rounded_data[best(rounded_data[:, 1]), 0]
 # plot relationship between learning rate and performance, with an eta selected just before diminishing returns
 print(f"Good learning rate: {good_eta:4f}")
 plt.axvline(good_eta, color="orange")
-plt.title("Smoothed relationship between learning rate and METRIC.")
+plt.title("Smoothed relationship between learning rate and metric.")
 plt.xlabel("learning rate")
 plt.ylabel(METRIC)
-sns.lineplot(x=lowess_data[:, 0], y=lowess_data[:, 1])
 plt.show()
 
 params["eta"] = good_eta
