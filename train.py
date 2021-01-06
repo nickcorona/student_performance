@@ -7,13 +7,26 @@ from category_encoders import OneHotEncoder, OrdinalEncoder  # sometimes needed
 from sklearn.model_selection import train_test_split
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-df = pd.read_csv("data/abalone_original.csv")
+df = pd.read_csv("data/StudentsPerformance.csv")
 df.info()
 
-y = df["rings"]
-X = df.drop("rings", axis=1)
+y = df["math score"]
+X = df.drop(["reading score", "writing score"], axis=1)
 
-X["sex"] = X["sex"].astype("category")
+X["parental level of education"] = pd.Categorical(
+    X["parental level of education"],
+    [
+        "some high school",
+        "high school",
+        "some college",
+        "associate's degree",
+        "bachelor's degree",
+        "master's degree",
+    ],
+    ordered=True,
+)
+obj_cols = X.select_dtypes('object').columns
+X[obj_cols] = X[obj_cols].astype('category')
 
 SEED = 0
 Xt, Xv, yt, yv = train_test_split(
