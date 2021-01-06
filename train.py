@@ -6,6 +6,7 @@ import seaborn as sns
 from category_encoders import OneHotEncoder, OrdinalEncoder  # sometimes needed
 from sklearn.model_selection import train_test_split
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from helpers import loguniform
 
 df = pd.read_csv("data/StudentsPerformance.csv")
 df.info()
@@ -39,13 +40,13 @@ dv = lgb.Dataset(Xv, yv, silent=True)
 OBJECTIVE = "regression"
 METRIC = "rmse"
 MAXIMIZE = False
-EARLY_STOPPING_ROUNDS = 25
+EARLY_STOPPING_ROUNDS = 10
 MAX_ROUNDS = 10000
 REPORT_ROUNDS = 10
 
 params = {
     "objective": OBJECTIVE,
-    "METRIC": METRIC,
+    "metric": METRIC,
     "verbose": -1,
 }
 
@@ -58,11 +59,6 @@ history = lgb.train(
     early_stopping_rounds=EARLY_STOPPING_ROUNDS,
     verbose_eval=REPORT_ROUNDS,
 )
-
-
-def loguniform(low=0, high=1, size=None, base=10):
-    """Returns a number or a set of numbers from a log uniform distribution"""
-    return np.power(base, np.random.uniform(low, high, size))
 
 
 best_etas = {"eta": [], "score": []}
