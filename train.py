@@ -13,22 +13,33 @@ df = pd.read_csv("data/StudentsPerformance.csv")
 df.info()
 
 y = df["math score"]
-X = df.drop(["reading score", "writing score"], axis=1)
+X = df.drop(["reading score", "writing score", "math score"], axis=1)
 
 X["parental level of education"] = pd.Categorical(
     X["parental level of education"],
     [
         "some high school",
+        "associate's degree",
         "high school",
         "some college",
-        "associate's degree",
         "bachelor's degree",
         "master's degree",
     ],
-    ordered=True,
+    ordered=False,
 )
-obj_cols = X.select_dtypes('object').columns
-X[obj_cols] = X[obj_cols].astype('category')
+
+# X["parental level of education"] = X["parental level of education"].replace(
+#     {
+#         "some high school": 0,
+#         "high school": 1,
+#         "some college": 2,
+#         "associate's degree": 3,
+#         "bachelor's degree": 4,
+#         "master's degree": 5,
+#     }
+# )
+obj_cols = X.select_dtypes("object").columns
+X[obj_cols] = X[obj_cols].astype("category")
 
 SEED = 0
 Xt, Xv, yt, yv = train_test_split(
@@ -61,12 +72,12 @@ history = lgb.train(
     verbose_eval=REPORT_ROUNDS,
 )
 
-best_etas = {"eta": [], "score": []}
+best_etas = {"learning_rate": [], "score": []}
 
 for _ in range(60):
-    eta = loguniform(-4, 0)
-    best_etas["eta"].append(eta)
-    params["eta"] = eta
+    eta = loguniform(-5, 0)
+    best_etas["learning_rate"].append(eta)
+    params["learning_rate"] = eta
     model = lgb.train(
         params,
         dt,
@@ -81,7 +92,7 @@ for _ in range(60):
 best_eta_df = pd.DataFrame.from_dict(best_etas)
 lowess_data = lowess(
     best_eta_df["score"],
-    best_eta_df["eta"],
+    best_eta_df["learning_rate"],
 )
 
 # use log scale as it's easier to observe the whole graph
@@ -91,8 +102,7 @@ rounded_data = lowess_data.copy()
 rounded_data[:, 1] = rounded_data[:, 1].round(4)
 rounded_data = rounded_data[::-1]  # reverse to find first best
 
-# maximize or minimize METRIC
-# e.g. binary loss needs minimizing, whereas AUC requires maximizing
+# maximize or minimize metric
 if MAXIMIZE:
     best = np.argmax
 else:
@@ -107,7 +117,7 @@ plt.xlabel("learning rate")
 plt.ylabel(METRIC)
 plt.show()
 
-params["eta"] = good_eta
+params["learning_rate"] = good_eta
 
 model = lgb.train(
     params,
@@ -119,7 +129,6 @@ model = lgb.train(
     verbose_eval=REPORT_ROUNDS,
 )
 
-
 threshold = 0.75
 corr = Xt.corr(method="kendall")
 upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(np.bool))
@@ -128,7 +137,6 @@ high_upper = upper[(abs(upper) > threshold)]
 abs_high_upper = abs(high_upper).sort_values(ascending=False)
 pairs = abs_high_upper.index.to_list()
 print(f"Correlated features: {pairs if len(pairs) > 0 else None}")
-
 
 # drop correlated features
 best_score = model.best_score["valid"][METRIC]
