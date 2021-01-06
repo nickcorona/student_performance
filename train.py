@@ -15,29 +15,6 @@ df.info()
 y = df["math score"]
 X = df.drop(["reading score", "writing score", "math score"], axis=1)
 
-X["parental level of education"] = pd.Categorical(
-    X["parental level of education"],
-    [
-        "some high school",
-        "associate's degree",
-        "high school",
-        "some college",
-        "bachelor's degree",
-        "master's degree",
-    ],
-    ordered=False,
-)
-
-# X["parental level of education"] = X["parental level of education"].replace(
-#     {
-#         "some high school": 0,
-#         "high school": 1,
-#         "some college": 2,
-#         "associate's degree": 3,
-#         "bachelor's degree": 4,
-#         "master's degree": 5,
-#     }
-# )
 obj_cols = X.select_dtypes("object").columns
 X[obj_cols] = X[obj_cols].astype("category")
 
@@ -62,7 +39,7 @@ params = {
     "verbose": -1,
 }
 
-history = lgb.train(
+model = lgb.train(
     params,
     dt,
     valid_sets=[dt, dv],
@@ -177,7 +154,7 @@ print(
 sorted_features = [
     feature
     for _, feature in sorted(
-        zip(model.feature_importance(importance_type="gain"), model.feature_name()),
+        zip(model.feature_importance(importance_type="gain"), dt.feature_name),
         reverse=False,
     )
 ]
@@ -238,11 +215,10 @@ print("  Params: ")
 for key, value in best_params.items():
     print(f"    {key}: {value}")
 
-
 import lightgbm as lgb
 
 model = lgb.train(
-    params,
+    best_params,
     dt,
     valid_sets=[dt, dv],
     valid_names=["training", "valid"],
