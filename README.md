@@ -1,3 +1,3 @@
-Predicting abalone age.
+Predicting student age.
 
-Source: https://www.kaggle.com/rodolfomendes/abalone-dataset
+Source: https://www.kaggle.com/spscientist/students-performance-in-exams
